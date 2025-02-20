@@ -14,7 +14,7 @@ Key features include:
 ## 🛠️ Tech Stack
 | Component       | Tools Used            |
 |-----------------|------------------------|
-| **Data Analysis** | Python, Pandas, NLTK  |
+| **Data Analysis** | Python, Pandas, NLTK, Excel,PowerBI  |
 | **Machine Learning** | Scikit-learn, Hugging Face |
 | **API Development** | FastAPI, Flask      |
 | **Frontend**    | Streamlit,Flask              |
