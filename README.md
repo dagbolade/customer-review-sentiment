@@ -13,12 +13,13 @@ Key features include:
 ---
 
 ## 🛠️ Tech Stack
-| Component       | Tools Used            |
-|-----------------|------------------------|
-| **Data Analysis** | Python, Pandas, NLTK, Excel,PowerBI  |
+| Component       | Tools Used |
+|-----------------|-----------|
+| **Data Analysis** | Python, Pandas, NLTK, Excel,PowerBI |
 | **Machine Learning** | Scikit-learn, Hugging Face |
-| **API Development** | FastAPI, Flask      |
-| **Frontend**    | Streamlit,Flask              |
-| **Version Control** | Git & GitHub         |
+| **API Development** | FastAPI, Flask |
+| **Frontend**    | Streamlit,Flask |
+| **Version Control** | Git & GitHub |
+| **Cloud Platform** |  AWS     |
 
 ---
