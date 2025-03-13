@@ -8,6 +8,7 @@ Key features include:
 - 📊 **Sentiment Analysis:** Classifying reviews as positive, neutral, or negative.  
 - 🔑 **Key Insights:** Highlighting themes and trends from reviews.  
 - 📈 **Visualisation:** Interactive dashboard to view sentiment breakdown.  
+- 📧 **Feedback:** Providing actionable feedback for businesses.
 
 ---
 
