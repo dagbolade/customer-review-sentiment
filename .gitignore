@@ -1,0 +1,30 @@
+__pycache__/
+*.pyc
+*.so
+*.pyd
+*.dll
+
+# Virtual environment
+venv/
+.env/
+*.venv
+
+# Streamlit cache
+.streamlit/
+
+# Logs
+logs/
+*.log
+debug.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python package files
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
