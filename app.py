@@ -1,13 +1,22 @@
-import random
-
+import joblib
 import pandas as pd
 import streamlit as st
 
+# Ensure class is available for joblib deserialization
+from preprocessor import (
+    TextPreprocessor,
+)  # This is needed for the pipeline to deserialize
 
-# Dummy data for sentiment analysis
-def get_dummy_sentiment(text):
-    sentiments = ["Positive", "Negative", "Neutral"]
-    return random.choice(sentiments)
+pipeline = joblib.load("linear_svc_model.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
+
+
+# Get sentiment analysis
+def get_sentiment(text):
+    # Make predictions with the model and return the sentiment
+    prediction = pipeline.predict([text])
+    sentiment = label_encoder.inverse_transform(prediction)[0]
+    return sentiment
 
 
 # Function to get sentiment color
@@ -37,7 +46,7 @@ file = st.sidebar.file_uploader("Upload a CSV file", type=["csv"])
 
 if file:
     df = pd.read_csv(file)
-    df["Sentiment"] = df["Review"].apply(get_dummy_sentiment)
+    df["Sentiment"] = df["Review"].apply(get_sentiment)
     st.write("### Analyzed Customer Reviews")
     st.dataframe(df)
 else:
@@ -48,7 +57,7 @@ st.write("### Manual Sentiment Check")
 text_input = st.text_area("Enter a customer review:")
 if st.button("Check Sentiment"):
     if text_input:
-        sentiment = get_dummy_sentiment(text_input)
+        sentiment = get_sentiment(text_input)
         color = get_sentiment_color(sentiment)
         st.markdown(
             f"<p style='color: {color}; font-size: 20px; font-weight: bold;'>Predicted Sentiment: {sentiment}</p>",
