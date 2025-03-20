@@ -23,3 +23,25 @@ Key features include:
 | **Cloud Platform** |  AWS     |
 
 ---
+
+## DATA ANALYSIS 
+
+This repository contains a Python script to clean and preprocess customer reviews from an Excel file ("cleaned_zappos_men.xlsx"). The script removes special characters, converts text to lowercase, removes stopwords, and applies stemming to prepare the data for sentiment analysis or machine learning tasks.
+
+## EXCEL was also used for dropping off columns from the original dataset .
+
+## **📌 Features**
+- Converts text to **lowercase**  
+- Removes **punctuation and special characters**  
+- **Tokenizes** words using `nltk`  
+- Removes **stopwords**  
+- Applies **stemming** using `PorterStemmer`  
+
+---
+
+## **🚀 Installation & Setup**  
+
+### ** Clone the Repository**
+```bash
+git clone https://github.com/SAMUELAY1/customer-review-sentiment.git
+cd customer-review-sentiment
