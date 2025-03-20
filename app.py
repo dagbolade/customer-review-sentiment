@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import os
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 # FastAPI backend URL
 API_URL = "http://127.0.0.1:8000/predict"
 
