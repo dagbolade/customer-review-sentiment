@@ -8,16 +8,40 @@ Key features include:
 - 📊 **Sentiment Analysis:** Classifying reviews as positive, neutral, or negative.  
 - 🔑 **Key Insights:** Highlighting themes and trends from reviews.  
 - 📈 **Visualisation:** Interactive dashboard to view sentiment breakdown.  
+- 📧 **Feedback:** Providing actionable feedback for businesses.
 
 ---
 
 ## 🛠️ Tech Stack
-| Component       | Tools Used            |
-|-----------------|------------------------|
-| **Data Analysis** | Python, Pandas, NLTK, Excel,PowerBI  |
+| Component       | Tools Used |
+|-----------------|-----------|
+| **Data Analysis** | Python, Pandas, NLTK, Excel,PowerBI |
 | **Machine Learning** | Scikit-learn, Hugging Face |
-| **API Development** | FastAPI, Flask      |
-| **Frontend**    | Streamlit,Flask              |
-| **Version Control** | Git & GitHub         |
+| **API Development** | FastAPI, Flask |
+| **Frontend**    | Streamlit,Flask |
+| **Version Control** | Git & GitHub |
+| **Cloud Platform** |  AWS     |
 
 ---
+
+## DATA ANALYSIS 
+
+This repository contains a Python script to clean and preprocess customer reviews from an Excel file ("cleaned_zappos_men.xlsx"). The script removes special characters, converts text to lowercase, removes stopwords, and applies stemming to prepare the data for sentiment analysis or machine learning tasks.
+
+## EXCEL was also used for dropping off columns from the original dataset .
+
+## **📌 Features**
+- Converts text to **lowercase**  
+- Removes **punctuation and special characters**  
+- **Tokenizes** words using `nltk`  
+- Removes **stopwords**  
+- Applies **stemming** using `PorterStemmer`  
+
+---
+
+## **🚀 Installation & Setup**  
+
+### ** Clone the Repository**
+```bash
+git clone https://github.com/SAMUELAY1/customer-review-sentiment.git
+cd customer-review-sentiment
