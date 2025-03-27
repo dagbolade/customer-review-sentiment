@@ -1,2 +1,10 @@
-review,sentiment,confidence
-"the waiter were so rude, they didnt even acknowledge us at all made us wait wtf",Negative,0.13
+review,sentiment,confidence,model
+i really hate the shoes,Positive,0.6719567179679871,LSTM
+i really hate the shoes,Positive,0.6719567179679871,LSTM
+i really love the shoes,Positive,0.9278960824012756,LSTM
+i really love the shoes,Positive,0.9992063641548157,BERT
+i really hate the shoes,Positive,0.9956825971603394,BERT
+i hate the shoes,Positive,0.9496234655380249,BERT
+i do not like the shoes,Negative,0.8134117722511292,BERT
+i don't like the shoes,Negative,0.8458610773086548,BERT
+i do like the shoes,Positive,0.9986918568611145,BERT
