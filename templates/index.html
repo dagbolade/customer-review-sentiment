@@ -83,6 +83,42 @@
             background-color: #007bff;
             color: white;
         }
+        .file-upload {
+            margin-top: 20px;
+        }
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        .file-upload label {
+            display: block;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .file-upload label:hover {
+            background-color: #0056b3;
+        }
+        .download-link {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -90,19 +126,40 @@
         <h1>📝 Customer Review Sentiment Analysis</h1>
         <p>Analyze customer feedback and detect sentiment (Positive, Neutral, Negative).</p>
 
+        <!-- Model Selection Dropdown -->
+        <label for="model">Select Model:</label>
+        <select id="model">
+            <option value="LSTM">LSTM</option>
+            <option value="BERT">BERT</option>
+        </select>
+
+        <!-- Text Input for Single Review -->
         <textarea id="reviewInput" placeholder="Enter a review..."></textarea>
         <button onclick="analyzeSentiment()">Analyze Sentiment</button>
 
+        <!-- Result Display -->
         <div id="result" class="result"></div>
 
+        <!-- CSV File Upload -->
+        <div class="file-upload">
+            <label for="csvFile">📁 Upload CSV File</label>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="processCSV()">Process CSV</button>
+            <a id="downloadLink" class="download-link" style="display: none;">Download Processed CSV</a>
+        </div>
+
+        <!-- History Table -->
         <div class="history">
             <h2>📌 Previous Predictions</h2>
+            <!-- Add the Download History Button here -->
+            <button onclick="downloadHistory()">Download History as CSV</button>
             <table>
                 <thead>
                     <tr>
                         <th>Review</th>
                         <th>Sentiment</th>
                         <th>Confidence</th>
+                        <th>Model</th>
                     </tr>
                 </thead>
                 <tbody id="historyTable"></tbody>
@@ -111,33 +168,182 @@
     </div>
 
     <script>
+        // Function predicting sentiment
         function analyzeSentiment() {
-            const review = document.getElementById("reviewInput").value;
-            if (!review.trim()) {
-                alert("Please enter a review.");
+        const review = document.getElementById("reviewInput").value;
+        const model = document.getElementById("model").value;
+        const resultDiv = document.getElementById("result");
+
+        if (!review.trim()) {
+            alert("Please enter a review.");
+            return;
+        }
+
+        // Show loading indicator
+        resultDiv.textContent = "Analyzing...";
+        resultDiv.className = "result";
+
+        // Instead of calling the FastAPI endpoint directly, use the Flask backend as a proxy
+        fetch("/analyze", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ 
+                text: review,
+                model: model 
+            })
+        })
+        .then(response => {
+            console.log("Response status:", response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Server error (${response.status}): ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Received data:", data);
+            
+            // Display the prediction result
+            resultDiv.textContent = `Prediction: ${data.sentiment} (Confidence: ${(data.confidence * 100).toFixed(2)}%)`;
+            resultDiv.className = "result " + data.sentiment.toLowerCase();
+            
+            // Add to history table
+            const historyTable = document.getElementById("historyTable");
+            const newRow = historyTable.insertRow(0);
+            
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+            const cell3 = newRow.insertCell(2);
+            const cell4 = newRow.insertCell(3);
+            
+            cell1.textContent = review.length > 50 ? review.substring(0, 50) + "..." : review;
+            cell2.textContent = data.sentiment;
+            cell3.textContent = (data.confidence * 100).toFixed(2) + "%";
+            cell4.textContent = model;
+        })
+        .catch(error => {
+            console.error("Detailed error:", error);
+            resultDiv.textContent = "Error: " + error.message;
+            resultDiv.className = "result negative";
+        });
+    }
+
+        async function processCSV() {
+            const fileInput = document.getElementById("csvFile");
+            const model = document.getElementById("model").value;
+            const resultDiv = document.getElementById("result");
+            const downloadLink = document.getElementById("downloadLink");
+
+            // Reset UI state
+            resultDiv.textContent = "Processing...";
+            resultDiv.className = "result";
+            downloadLink.style.display = "none";
+
+            // Validate file input
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError("Please select a CSV file first");
                 return;
             }
 
-            fetch("http://127.0.0.1:8000/predict", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: review })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const sentimentDiv = document.getElementById("result");
-                sentimentDiv.textContent = `Prediction: ${data.sentiment}`;
-                sentimentDiv.className = "result " + data.sentiment.toLowerCase();
+            const file = fileInput.files[0];
+            
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showError("Only CSV files are supported");
+                return;
+            }
 
-                const table = document.getElementById("historyTable");
-                const row = `<tr>
-                    <td>${review}</td>
-                    <td>${data.sentiment}</td>
-                    <td>${(data.confidence * 100).toFixed(2)}%</td>
-                </tr>`;
-                table.innerHTML += row;
+            // Prepare form data
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("model", model);
+
+            try {
+                // Show processing status
+                resultDiv.textContent = "Analyzing CSV...";
+                
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                // First check if the response is OK
+                if (!response.ok) {
+                    // Try to parse error response as JSON
+                    try {
+                        const errorData = await response.json();
+                        let errorMsg = errorData.message || "Processing failed";
+                        
+                        // Handle column detection errors specifically
+                        if (errorData.details?.received_columns) {
+                            errorMsg += `\n\nYour CSV contains these columns:\n${errorData.details.received_columns.join(', ')}`;
+                            errorMsg += `\n\nRequired columns should include: review, comment, text, or feedback`;
+                        }
+                        throw new Error(errorMsg);
+                    } catch (e) {
+                        // Fallback if error response isn't JSON
+                        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                    }
+                }
+
+                // Process successful response
+                const data = await response.json();
+                
+                // Success case
+                resultDiv.textContent = data.message || "File processed successfully";
+                resultDiv.className = "result positive";
+                downloadLink.href = data.download_url;
+                downloadLink.textContent = `Download ${data.filename}`;
+                downloadLink.style.display = "block";
+
+            } catch (error) {
+                console.error("CSV Processing Error:", error);
+                showError(error.message);
+            }
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById("result");
+            resultDiv.textContent = message;
+            resultDiv.className = "result negative";
+            document.getElementById("downloadLink").style.display = "none";
+        }
+
+
+        // Function to download history as CSV
+        function downloadHistory() {
+            fetch("/download_history", {
+                method: "GET",
             })
-            .catch(error => console.error("Error:", error));
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+                return response.text(); // Get CSV as text
+            })
+            .then(csvData => {
+                // Create a Blob and download
+                const blob = new Blob([csvData], { type: "text/csv" });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "sentiment_history.csv";
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to download history: " + error.message);
+            });
+
         }
     </script>
 </body>
