@@ -33,7 +33,7 @@ pip install -r requirements.txt
 #### Running the Application
 1. Start FastAPI Service:
 ```bash
-uvicorn fastapi_app:app --host 127.0.0.1 --port 8000 --reload
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 2. Start Flask Web Application:
