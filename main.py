@@ -11,7 +11,7 @@ import logging
 
 app = FastAPI(
     title="Sentiment Analysis API",
-    description="Classifies customer reviews as Positive or Negative",
+    description="Classifies customer reviews as Positive, Neutral or Negative",
     version="1.0"
 )
 
@@ -59,7 +59,15 @@ def classify_review_lstm(review: ReviewInput):
         seq = tokenizer.texts_to_sequences([review.text])
         padded = pad_sequences(seq, maxlen=MAX_LEN, padding="post", truncating="post")
         prediction = lstm_model.predict(padded)[0][0]
-        sentiment = "Positive" if prediction >= 0.5 else "Negative"
+        
+        # Updated sentiment classification with neutral range
+        if prediction >= 0.6:
+            sentiment = "Positive"
+        elif prediction <= 0.4:
+            sentiment = "Negative"
+        else:
+            sentiment = "Neutral"
+            
         return {"sentiment": sentiment, "confidence": float(prediction)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

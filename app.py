@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 import requests
 import pandas as pd
 import os
@@ -9,7 +9,10 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)
+
+# Initialize history as a global variable
 history = []
+
 # Configuration
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -42,7 +45,13 @@ def predict_sentiment_from_api(text, model):
 
 @app.route("/")
 def home():
-    return render_template("index.html", models=MODELS.keys())
+     sentiment_colors = {
+        "Positive": "green",
+        "Negative": "red",
+        "Neutral": "yellow",
+        "Error": "gray"  
+    }
+     return render_template("index.html", models=MODELS.keys())
 
 @app.route("/upload", methods=["POST"])
 def handle_upload():
@@ -95,8 +104,7 @@ def download_file(filename):
         return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
-    
-from flask import make_response
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
     try:
@@ -104,62 +112,24 @@ def analyze():
         model = data.get("model", "LSTM")
         review_text = data.get("text", "")
         
-        logging.debug(f"Received request for model: {model}, text: {review_text}")
-        
-        # Print the URL we're about to call
-        api_url = MODELS[model]
-        logging.debug(f"Calling FastAPI at: {api_url}")
-        
-        # Try a simple request first to check connectivity
-        try:
-            test_response = requests.get("http://127.0.0.1:8000/", timeout=5)
-            logging.debug(f"Test connection to FastAPI: {test_response.status_code}")
-        except Exception as e:
-            logging.error(f"Test connection to FastAPI failed: {str(e)}")
-        
-        # Now try the actual API call
-        try:
-            response = requests.post(
-                api_url, 
-                json={"text": review_text},
-                timeout=10
-            )
-            
-            logging.debug(f"FastAPI response status: {response.status_code}")
-            logging.debug(f"FastAPI response body: {response.text}")
-            
-            # Check response status
-            if response.status_code == 200:
-                result = response.json()
-                
-                # Add to history
-                history.append({
-                    "review": review_text, 
-                    "sentiment": result["sentiment"], 
-                    "confidence": result["confidence"], 
-                    "model": model
-                })
-                
-                # Save updated history
-                df = pd.DataFrame(history)
-                df.to_csv("history.csv", index=False)
-                
-                return jsonify(result)
-            else:
-                error_message = f"API Error: {response.status_code} - {response.text}"
-                logging.error(error_message)
-                return jsonify({"error": error_message}), 500
-                
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error making request to FastAPI: {str(e)}")
-            return jsonify({"error": f"Error connecting to API: {str(e)}"}), 500
-    
-    except Exception as e:
-        logging.error(f"Error in analyze route: {str(e)}")
-        import traceback
-        logging.error(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
+        if not review_text.strip():
+            return jsonify({"error": "Empty review text"}), 400
 
+        result = predict_sentiment_from_api(review_text, model)
+        
+        # Add to history
+        history.append({
+            "review": review_text,
+            "sentiment": result["sentiment"],
+            "confidence": result["confidence"],
+            "model": model
+        })
+        
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error in analyze: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/download_history")
 def download_history():
