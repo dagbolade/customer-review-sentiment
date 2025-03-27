@@ -58,8 +58,18 @@
             font-size: 18px;
             font-weight: bold;
         }
-        .positive { background-color: #d4edda; color: #155724; }
-        .negative { background-color: #f8d7da; color: #721c24; }
+        .positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .neutral {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
         .file-upload label {
             display: block;
             padding: 10px;
@@ -92,6 +102,16 @@
         th {
             background-color: #007bff;
             color: white;
+        }
+        /* History table row coloring */
+        tr.positive {
+            background-color: #d4edda;
+        }
+        tr.neutral {
+            background-color: #fff3cd;
+        }
+        tr.negative {
+            background-color: #f8d7da;
         }
     </style>
 </head>
@@ -165,11 +185,19 @@
         }
         
         function addToHistory(review, sentiment, confidence, model) {
-            const row = document.getElementById("historyTable").insertRow(0);
-            row.insertCell(0).textContent = review.length > 50 ? `${review.substring(0, 50)}...` : review;
-            row.insertCell(1).textContent = sentiment;
-            row.insertCell(2).textContent = `${(confidence * 100).toFixed(2)}%`;
-            row.insertCell(3).textContent = model;
+            const historyTable = document.getElementById("historyTable");
+            const newRow = historyTable.insertRow(0);
+            newRow.className = sentiment.toLowerCase();
+            
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+            const cell3 = newRow.insertCell(2);
+            const cell4 = newRow.insertCell(3);
+            
+            cell1.textContent = review.length > 50 ? `${review.substring(0, 50)}...` : review;
+            cell2.textContent = sentiment;
+            cell3.textContent = `${(confidence * 100).toFixed(2)}%`;
+            cell4.textContent = model;
         }
         
         async function processCSV() {
