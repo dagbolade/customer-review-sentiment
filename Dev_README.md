@@ -1,118 +1,105 @@
-# Sentiment Analysis Web Application
+# Customer Review Sentiment Analysis
 
 ## Project Overview
-A comprehensive sentiment analysis web application using LSTM and BERT models for analyzing customer reviews.
+A web application for sentiment analysis of customer reviews using advanced machine learning models (LSTM and BERT) that allows:
+- Single review sentiment prediction
+- Bulk CSV file sentiment analysis
+- Downloading analysis history
+- Switching between models
 
-## Development Setup
+## Key Features
+- 🤖 Two Machine Learning Models:
+  - LSTM Model
+  - BERT Model
+- 📊 Sentiment Classification (Positive/Negative)
+- 📁 CSV File Upload and Analysis
+- 💾 Downloadable Analysis History
 
-### Prerequisites
+## Recent Improvements
+- Added CSV file upload functionality
+- Implemented sentiment analysis history download
+- Integrated BERT model for enhanced prediction accuracy
+
+## Prerequisites
 - Python 3.8+
 - pip
-- venv (Python's built-in virtual environment tool)
 
-### Local Development
+## Setup and Installation
 
-#### 1. Clone the Repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/dagbolade/customer-review-sentiment.git
 cd customer-review-sentiment
 ```
 
-#### 2. Create and Activate Virtual Environment
+### 2. Create Virtual Environment
 
-##### On Windows
+#### On Windows
 ```bash
-# Create virtual environment
 python -m venv venv
-
-# Activate virtual environment
 venv\Scripts\activate
 ```
 
-##### On macOS/Linux
+#### On macOS/Linux
 ```bash
-# Create virtual environment
 python3 -m venv venv
-
-# Activate virtual environment
 source venv/bin/activate
 ```
 
-#### 3. Install Dependencies
+### 3. Install Dependencies
 ```bash
-# Ensure virtual environment is activated
 pip install -r requirements.txt
 ```
 
-### Running the Application
+## Running the Application
 
-#### 1. Start FastAPI Service
+### Start Services
+
+#### Terminal 1: FastAPI Sentiment Analysis Service
 ```bash
 uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-#### 2. Start Flask Web Application (in another terminal)
+#### Terminal 2: Flask Web Application
 ```bash
-# Ensure virtual environment is activated
 python app.py
 ```
 
-#### Deactivating Virtual Environment
-When you're done working on the project:
-```bash
-deactivate
-```
+### Access the Application
+- Web Interface: `http://localhost:5000`
+- FastAPI Docs: `http://localhost:8000/docs`
 
-### Key Development Features
-- LSTM and BERT sentiment analysis models
-- CSV file upload functionality
-- Sentiment analysis history tracking
-- Downloadable analysis results
+## How to Use
+1. Open web interface at `http://localhost:5000`
+2. Choose LSTM or BERT model
+3. Enter a review or upload a CSV file
+4. View sentiment analysis results
+5. Download processed files or analysis history
 
-### Project Structure
+## Technical Details
+- **Backend**: Flask, FastAPI
+- **ML Frameworks**: TensorFlow, Transformers
+- **Models**: 
+  - LSTM Sentiment Classifier
+  - BERT Sentiment Classifier
+
+## Project Structure
 ```
 customer-review-sentiment/
-│
-├── venv/                    # Virtual environment (git-ignored)
-├── app.py                   # Flask backend
-├── fastapi_app.py           # FastAPI sentiment analysis service
-├── index.html               # Frontend interface
-├── uploads/                 # Uploaded CSV files
+├── app.py               # Flask web application
+├── fastapi_app.py       # ML model serving API
+├── index.html           # Frontend interface
 ├── models/
-│   ├── lstm_sentiment_model.keras
-│   └── saved_new_bert_model/
-├── history.csv              # Analysis history
-└── requirements.txt         # Project dependencies
+│   ├── lstm_model.keras
+│   └── saved_bert_model/
+└── uploads/             # Processed files
 ```
-
-### Virtual Environment Best Practices
-- Always activate the virtual environment before working on the project
-- Install project-specific packages only within the virtual environment
-- Use `requirements.txt` to track project dependencies
-- Add `venv/` to your `.gitignore`
 
 ## Contributing
 1. Fork the repository
 2. Create a feature branch
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. Activate your virtual environment
-4. Make your changes
-5. Run tests
-6. Commit and push
-7. Create a Pull Request
-
-## Troubleshooting Virtual Environment
-- Ensure you're using the correct Python version
-- Verify the virtual environment is activated
-- Reinstall dependencies if encountering package conflicts
-- Use `pip freeze` to check installed packages
-
-## Additional Notes
-- Recommended Python version: 3.8+
-- Always use a virtual environment for Python projects
-- Keep your virtual environment and dependencies updated
+3. Commit your changes
+4. Push and create a Pull Request
 
 ## License
-MIT License
+MIT license
