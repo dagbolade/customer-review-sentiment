@@ -115,7 +115,4 @@ customer-review-sentiment/
 - Keep your virtual environment and dependencies updated
 
 ## License
-[Specify your project's license]
-
-
-```
+MIT License
