@@ -19,8 +19,8 @@ A comprehensive sentiment analysis web application using LSTM and BERT models fo
 
 #### 1. Clone the Repository
 ```bash
-git clone <your-repository-url>
-cd sentiment-analysis-project
+git clone https://github.com/dagbolade/customer-review-sentiment.git
+cd customer-review-sentiment
 ```
 
 #### 2. Install Dependencies
