@@ -1,21 +1,28 @@
-import joblib
+import torch
+
+torch._C._disable_torch_function_subclass = True
+
 import pandas as pd
 import streamlit as st
+import torch
 
 # Ensure class is available for joblib deserialization
 from preprocessor import (
     TextPreprocessor,
+    make_prediction,
 )  # This is needed for the pipeline to deserialize
 
-pipeline = joblib.load("linear_svc_model.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
+# pipeline = joblib.load("linear_svc_model.pkl")
+# label_encoder = joblib.load("label_encoder.pkl")
 
 
 # Get sentiment analysis
 def get_sentiment(text):
     # Make predictions with the model and return the sentiment
-    prediction = pipeline.predict([text])
-    sentiment = label_encoder.inverse_transform(prediction)[0]
+    # prediction = pipeline.predict([text])
+    # sentiment = label_encoder.inverse_transform(prediction)[0]
+
+    sentiment = make_prediction(text)
     return sentiment
 
 
