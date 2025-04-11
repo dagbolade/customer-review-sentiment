@@ -1,0 +1,8 @@
+# .gitignore
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+final_model/
+*.safetensors
+*.bin
