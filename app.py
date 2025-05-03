@@ -19,9 +19,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Backend API URLs
 MODELS = {
-    "LSTM": "http://127.0.0.1:8000/predict",
-    "BERT": "http://127.0.0.1:8000/predict_bert"
+    "LSTM": "https://customer-review-sentiment.onrender.com/predict",
+    "BERT": "https://customer-review-sentiment.onrender.com/predict_bert"
 }
+
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
