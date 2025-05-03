@@ -12,6 +12,9 @@ import os
 import requests
 import hashlib
 from typing import Optional
+import zipfile
+import io
+import gdown
 
 app = FastAPI(
     title="Sentiment Analysis API",
@@ -27,6 +30,8 @@ LABEL_MAP = {
 }
 MAX_LEN = 100
 BERT_DIR = "bert_model"
+GOOGLE_DRIVE_URL = "https://drive.google.com/drive/folders/1ksq2NSoHj38Ak6DiV39RKzbA6pqn-L8y?usp=drive_link"
+MODEL_FOLDER_ID = "1ksq2NSoHj38Ak6DiV39RKzbA6pqn-L8y"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,6 +56,25 @@ label_map: Optional[dict] = None
 class ReviewInput(BaseModel):
     text: str
 
+def download_bert_from_drive():
+    """Download BERT model from Google Drive"""
+    try:
+        os.makedirs(BERT_DIR, exist_ok=True)
+        
+        # Using gdown to download the folder
+        gdown.download_folder(
+            id=MODEL_FOLDER_ID,
+            output=BERT_DIR,
+            quiet=False,
+            use_cookies=False
+        )
+        
+        logger.info("Successfully downloaded BERT model from Google Drive")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to download BERT model from Google Drive: {str(e)}")
+        return False
+
 def validate_model_files():
     """Validate all required model files exist"""
     required_files = {
@@ -71,7 +95,22 @@ def validate_model_files():
                 logger.error(f"Missing file: {file}")
     
     if missing_files:
-        raise FileNotFoundError(f"Missing required model files: {missing_files}")
+        # Try to download missing BERT files
+        if any(f.startswith(BERT_DIR) for f in missing_files):
+            logger.info("Attempting to download missing BERT model files...")
+            if not download_bert_from_drive():
+                raise FileNotFoundError(f"Missing required model files: {missing_files}")
+            
+            # Recheck after download attempt
+            missing_files = []
+            for file in required_files["bert"]:
+                if not os.path.exists(file):
+                    missing_files.append(file)
+            
+            if missing_files:
+                raise FileNotFoundError(f"Still missing files after download attempt: {missing_files}")
+        else:
+            raise FileNotFoundError(f"Missing required model files: {missing_files}")
 
 def load_models():
     """Load all ML models and components"""
