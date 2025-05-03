@@ -18,10 +18,9 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Backend API URLs
-# In your Flask app (app.py)
 MODELS = {
-    "LSTM": "https://customer-review-sentiment-api.onrender.com/predict",
-    "BERT": "https://customer-review-sentiment-api.onrender.com/predict_bert"
+    "LSTM": "http://127.0.0.1:8000/predict",
+    "BERT": "http://127.0.0.1:8000/predict_bert"
 }
 
 # Setup logging
