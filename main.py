@@ -11,12 +11,22 @@ import logging
 import os
 import requests
 import hashlib
+from typing import Optional
 
 app = FastAPI(
     title="Sentiment Analysis API",
     description="Classifies customer reviews as Positive, Neutral or Negative",
     version="1.0"
 )
+
+# Constants
+LABEL_MAP = {
+    "0": "NEGATIVE",
+    "1": "NEUTRAL", 
+    "2": "POSITIVE"
+}
+MAX_LEN = 100
+BERT_DIR = "bert_model"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,214 +42,128 @@ app.add_middleware(
 )
 
 # Initialize models
-lstm_model = None
-tokenizer = None
-bert_model = None
-bert_tokenizer = None
-label_map = None
-MAX_LEN = 100
+lstm_model: Optional[tf.keras.Model] = None
+tokenizer: Optional[object] = None
+bert_model: Optional[TFBertForSequenceClassification] = None
+bert_tokenizer: Optional[BertTokenizer] = None
+label_map: Optional[dict] = None
 
 class ReviewInput(BaseModel):
     text: str
 
-def get_file_checksum(filepath):
-    """Calculate MD5 checksum of a file"""
-    hash_md5 = hashlib.md5()
-    with open(filepath, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-def validate_config():
-    """Ensure config.json exists and is valid"""
-    config_path = "bert_model/config.json"
-    if not os.path.exists(config_path):
-        logger.warning("config.json not found, creating default")
-        default_config = {
-            "_name_or_path": "bert-base-uncased",
-            "architectures": ["BertForSequenceClassification"],
-            "attention_probs_dropout_prob": 0.1,
-            "hidden_act": "gelu",
-            "hidden_dropout_prob": 0.1,
-            "hidden_size": 768,
-            "initializer_range": 0.02,
-            "intermediate_size": 3072,
-            "layer_norm_eps": 1e-12,
-            "max_position_embeddings": 512,
-            "model_type": "bert",
-            "num_attention_heads": 12,
-            "num_hidden_layers": 12,
-            "pad_token_id": 0,
-            "position_embedding_type": "absolute",
-            "transformers_version": "4.30.2",
-            "type_vocab_size": 2,
-            "use_cache": True,
-            "vocab_size": 30522,
-            "id2label": {"0": "NEGATIVE", "1": "NEUTRAL", "2": "POSITIVE"},
-            "label2id": {"NEGATIVE": 0, "NEUTRAL": 1, "POSITIVE": 2},
-            "num_labels": 3
-        }
-        os.makedirs("bert_model", exist_ok=True)
-        with open(config_path, "w") as f:
-            json.dump(default_config, f, indent=2)
-        return default_config
+def validate_model_files():
+    """Validate all required model files exist"""
+    required_files = {
+        "lstm": ["lstm_sentiment_model.keras", "tokenizer.pkl"],
+        "bert": [
+            f"{BERT_DIR}/config.json",
+            f"{BERT_DIR}/model.safetensors",
+            f"{BERT_DIR}/tokenizer_config.json",
+            f"{BERT_DIR}/vocab.txt"
+        ]
+    }
     
-    try:
-        with open(config_path, "r") as f:
-            config = json.load(f)
-        return config
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON in config.json, recreating")
-        os.remove(config_path)
-        return validate_config()
-
-def download_file_with_retry(url: str, destination: str, max_retries=3):
-    """Download file with retry logic and checksum verification"""
-    for attempt in range(max_retries):
-        try:
-            # Clear any existing file
-            if os.path.exists(destination):
-                os.remove(destination)
-                
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            
-            # Get expected file size from headers
-            file_size = int(response.headers.get('content-length', 0))
-            downloaded_size = 0
-            
-            with open(destination, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-                        downloaded_size += len(chunk)
-            
-            # Verify file downloaded completely
-            if file_size > 0 and os.path.getsize(destination) != file_size:
-                raise IOError(f"Incomplete download (expected {file_size}, got {os.path.getsize(destination)})")
-            
-            logger.info(f"Downloaded {os.path.basename(destination)} successfully")
-            return True
-            
-        except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed for {url}: {str(e)}")
-            if os.path.exists(destination):
-                os.remove(destination)
+    missing_files = []
+    for model_type, files in required_files.items():
+        for file in files:
+            if not os.path.exists(file):
+                missing_files.append(file)
+                logger.error(f"Missing file: {file}")
     
-    logger.error(f"Failed to download {url} after {max_retries} attempts")
-    return False
+    if missing_files:
+        raise FileNotFoundError(f"Missing required model files: {missing_files}")
 
 def load_models():
+    """Load all ML models and components"""
     global lstm_model, tokenizer, bert_model, bert_tokenizer, label_map
     
     try:
-        # 1. Load LSTM model and tokenizer
-        lstm_model = tf.keras.models.load_model("lstm_sentiment_model.keras")
-        with open("tokenizer.pkl", "rb") as f:
-            tokenizer = pickle.load(f)
-        logger.info("LSTM model and tokenizer loaded successfully")
+        validate_model_files()
         
-        # 2. Setup BERT model directory
-        BERT_DIR = "bert_model"
-        os.makedirs(BERT_DIR, exist_ok=True)
-        
-        # 3. Validate/repair config.json first
-        validate_config()
-        
-        # 4. Download other required files with verification
-        required_files = {
-            "model.safetensors": "https://drive.google.com/uc?id=1kvGD4Qc4wOdYi3-w-izUeTju0erURX8N&export=download",
-            "tokenizer_config.json": "https://drive.google.com/uc?id=10tlVYpPtSaVm_svtEAQ9ADcL_K78j8HW&export=download",
-            "vocab.txt": "https://drive.google.com/uc?id=1LsqA0l3XooH16LVl6qmZ-cBdsP0fka-S&export=download",
-            "label_map.json": "https://drive.google.com/uc?id=1mPKbDkRKL2mm1e29TyQfJ0ADaYHxgL22&export=download"
-        }
-        
-        for filename, url in required_files.items():
-            filepath = os.path.join(BERT_DIR, filename)
-            if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-                if not download_file_with_retry(url, filepath):
-                    raise RuntimeError(f"Failed to download {filename}")
-            
-            # Verify file is not empty
-            if os.path.getsize(filepath) == 0:
-                raise ValueError(f"Downloaded file {filename} is empty")
-        
-        # 5. Verify model.safetensors is valid
+        # Load LSTM model and tokenizer
         try:
-            import safetensors.torch
-            safetensors.torch.load_file(os.path.join(BERT_DIR, "model.safetensors"))
-            logger.info("model.safetensors verified successfully")
+            lstm_model = tf.keras.models.load_model("lstm_sentiment_model.keras")
+            with open("tokenizer.pkl", "rb") as f:
+                tokenizer = pickle.load(f)
+            logger.info("LSTM model and tokenizer loaded successfully")
         except Exception as e:
-            logger.error(f"model.safetensors verification failed: {str(e)}")
-            raise ValueError("Invalid model.safetensors file") from e
-        
-        # 6. Load BERT model
-        bert_model = TFBertForSequenceClassification.from_pretrained(BERT_DIR)
-        bert_tokenizer = BertTokenizer.from_pretrained(BERT_DIR)
-        
-        # 7. Load label map
-        with open(os.path.join(BERT_DIR, "label_map.json"), "r") as f:
-            label_map = json.load(f)
-            
-        logger.info("BERT model loaded successfully")
-        
-        # 8. Test the model
-        test_input = bert_tokenizer("This is a test", return_tensors="tf")
-        test_output = bert_model(test_input)
-        logger.info(f"BERT test output: {test_output.logits.numpy()}")
-        
+            logger.error(f"Failed to load LSTM model: {str(e)}")
+            raise
+
+        # Load BERT model and tokenizer
+        try:
+            bert_model = TFBertForSequenceClassification.from_pretrained(BERT_DIR)
+            bert_tokenizer = BertTokenizer.from_pretrained(BERT_DIR)
+            label_map = LABEL_MAP
+            logger.info("BERT model and tokenizer loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load BERT model: {str(e)}")
+            raise
+
     except Exception as e:
-        logger.error(f"Error loading models: {str(e)}", exc_info=True)
+        logger.critical(f"Critical error loading models: {str(e)}")
         raise RuntimeError(f"Model loading failed: {str(e)}")
 
 @app.on_event("startup")
 async def startup_event():
+    """Load models when application starts"""
+    logger.info("Starting up... Loading ML models")
     try:
         load_models()
+        logger.info("All models loaded successfully")
     except Exception as e:
-        logger.critical(f"Failed to load models: {str(e)}")
-        # Provide more helpful error message
-        raise RuntimeError(
-            "Failed to initialize models. Possible causes:\n"
-            "1. Corrupted model files - try deleting the bert_model directory and restarting\n"
-            "2. Internet connection issues for downloads\n"
-            "3. Insufficient disk space\n"
-            f"Technical details: {str(e)}"
-        )
+        logger.critical(f"Failed to load models during startup: {str(e)}")
+        # You might want to exit here if models are critical
+        # import sys; sys.exit(1)
 
 @app.get("/")
 def home():
-    return {"message": "Sentiment Analysis API"}
+    return {
+        "message": "Sentiment Analysis API",
+        "status": "running",
+        "models_loaded": {
+            "lstm": lstm_model is not None,
+            "bert": bert_model is not None
+        }
+    }
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "OK" if lstm_model and bert_model else "ERROR",
+        "lstm_loaded": lstm_model is not None,
+        "bert_loaded": bert_model is not None,
+        "ready": lstm_model is not None and bert_model is not None
+    }
 
 @app.get("/model_status")
 def get_model_status():
     bert_config = {}
-    if os.path.exists("bert_model/config.json"):
-        with open("bert_model/config.json", "r") as f:
-            bert_config = json.load(f)
+    config_path = f"{BERT_DIR}/config.json"
     
-    file_status = {}
-    for fname in ["config.json", "model.safetensors", "tokenizer_config.json", "vocab.txt", "label_map.json"]:
-        path = os.path.join("bert_model", fname)
-        file_status[fname] = {
-            "exists": os.path.exists(path),
-            "size": os.path.getsize(path) if os.path.exists(path) else 0
-        }
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as f:
+                bert_config = json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading BERT config: {str(e)}")
     
     return {
         "lstm_loaded": lstm_model is not None,
         "bert_loaded": bert_model is not None,
         "bert_config": bert_config,
-        "label_map": label_map,
-        "file_status": file_status
+        "label_map": label_map
     }
 
 @app.post("/predict")
 def classify_review_lstm(review: ReviewInput):
+    if lstm_model is None or tokenizer is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LSTM model not loaded. Service unavailable."
+        )
+    
     try:
-        if lstm_model is None or tokenizer is None:
-            raise HTTPException(status_code=503, detail="LSTM model not loaded")
-            
         seq = tokenizer.texts_to_sequences([review.text])
         padded = pad_sequences(seq, maxlen=MAX_LEN, padding="post", truncating="post")
         prediction = lstm_model.predict(padded, verbose=0)[0][0]
@@ -252,20 +176,27 @@ def classify_review_lstm(review: ReviewInput):
             sentiment = "Neutral"
             
         return {
+            "text": review.text[:100] + "..." if len(review.text) > 100 else review.text,
             "sentiment": sentiment,
             "confidence": float(prediction),
             "model": "LSTM"
         }
     except Exception as e:
-        logger.error(f"LSTM prediction error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"LSTM prediction error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Prediction failed: {str(e)}"
+        )
 
 @app.post("/predict_bert")
 def classify_review_bert(review: ReviewInput):
+    if bert_model is None or bert_tokenizer is None:
+        raise HTTPException(
+            status_code=503,
+            detail="BERT model not loaded. Service unavailable."
+        )
+    
     try:
-        if bert_model is None or bert_tokenizer is None:
-            raise HTTPException(status_code=503, detail="BERT model not loaded")
-        
         inputs = bert_tokenizer(
             review.text,
             return_tensors="tf",
@@ -282,13 +213,13 @@ def classify_review_bert(review: ReviewInput):
         sentiment = label_map.get(str(predicted_class), "Unknown")
         
         return {
+            "text": review.text[:100] + "..." if len(review.text) > 100 else review.text,
             "sentiment": sentiment,
             "confidence": float(confidence),
             "model": "BERT"
         }
-        
     except Exception as e:
-        logger.error(f"BERT prediction error: {str(e)}", exc_info=True)
+        logger.error(f"BERT prediction error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"BERT prediction failed: {str(e)}"

@@ -38,10 +38,15 @@ def detect_sentiment_columns(df):
 
 def predict_sentiment_from_api(text, model):
     """Call the appropriate sentiment analysis API."""
-    response = requests.post(MODELS[model], json={"text": text}, timeout=10)
-    if response.status_code == 200:
-        return response.json()
-    return {"sentiment": "Error", "confidence": 0.0}
+    try:
+        response = requests.post(MODELS[model], json={"text": text}, timeout=10)
+        if response.status_code == 200:
+            return response.json()
+        logger.error(f"API request failed with status {response.status_code}: {response.text}")
+        return {"sentiment": "Error", "confidence": 0.0, "error": response.text}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request to {model} API failed: {str(e)}")
+        return {"sentiment": "Error", "confidence": 0.0, "error": str(e)}
 
 @app.route("/")
 def home():
