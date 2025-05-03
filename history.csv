@@ -1,3 +1,0 @@
-review,sentiment,confidence,model
-i like the watch but it went bad in 2 weeks,Negative,0.09013472497463226,LSTM
-i like the watch but it went bad in 2 weeks,Negative,0.9910359382629395,BERT

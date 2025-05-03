@@ -53,6 +53,7 @@ bert_model: Optional[TFBertForSequenceClassification] = None
 bert_tokenizer: Optional[BertTokenizer] = None
 label_map: Optional[dict] = None
 
+
 class ReviewInput(BaseModel):
     text: str
 
