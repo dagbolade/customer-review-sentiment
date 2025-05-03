@@ -29,7 +29,7 @@ LABEL_MAP = {
     "2": "POSITIVE"
 }
 MAX_LEN = 100
-BERT_DIR = "bert_model"
+BERT_DIR = "final_model"
 GOOGLE_DRIVE_URL = "https://drive.google.com/drive/folders/1ksq2NSoHj38Ak6DiV39RKzbA6pqn-L8y?usp=drive_link"
 MODEL_FOLDER_ID = "1ksq2NSoHj38Ak6DiV39RKzbA6pqn-L8y"
 
