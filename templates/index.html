@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Sentiment Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        textarea, select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        textarea {
+            height: 80px;
+            resize: none;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .neutral {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .file-upload label {
+            display: block;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        .download-link {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            color: #007bff;
+            text-decoration: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        /* History table row coloring */
+        tr.positive {
+            background-color: #d4edda;
+        }
+        tr.neutral {
+            background-color: #fff3cd;
+        }
+        tr.negative {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Customer Review Sentiment Analysis</h1>
+        
+        <select id="model">
+            <option value="LSTM">LSTM</option>
+            <option value="BERT">BERT</option>
+        </select>
+        
+        <textarea id="reviewInput" placeholder="Enter a review..."></textarea>
+        <button onclick="analyzeSentiment()">Analyze Sentiment</button>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="file-upload">
+            <label for="csvFile">📁 Upload CSV File</label>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="processCSV()">Process CSV</button>
+            <a id="downloadLink" class="download-link" style="display: none;">Download Processed CSV</a>
+        </div>
+        
+        <button onclick="downloadHistory()">Download History as CSV</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Review</th>
+                    <th>Sentiment</th>
+                    <th>Confidence</th>
+                    <th>Model</th>
+                </tr>
+            </thead>
+            <tbody id="historyTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function analyzeSentiment() {
+            const review = document.getElementById("reviewInput").value.trim();
+            const model = document.getElementById("model").value;
+            const resultDiv = document.getElementById("result");
+            
+            if (!review) {
+                alert("Please enter a review.");
+                return;
+            }
+            
+            resultDiv.textContent = "Analyzing...";
+            resultDiv.className = "result";
+            
+            try {
+                const response = await fetch("/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: review, model: model })
+                });
+                
+                if (!response.ok) throw new Error(await response.text());
+                
+                const data = await response.json();
+                resultDiv.textContent = `Prediction: ${data.sentiment} (${(data.confidence * 100).toFixed(2)}%)`;
+                resultDiv.className = `result ${data.sentiment.toLowerCase()}`;
+                
+                addToHistory(review, data.sentiment, data.confidence, model);
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = "result negative";
+            }
+        }
+        
+        function addToHistory(review, sentiment, confidence, model) {
+            const historyTable = document.getElementById("historyTable");
+            const newRow = historyTable.insertRow(0);
+            newRow.className = sentiment.toLowerCase();
+            
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+            const cell3 = newRow.insertCell(2);
+            const cell4 = newRow.insertCell(3);
+            
+            cell1.textContent = review.length > 50 ? `${review.substring(0, 50)}...` : review;
+            cell2.textContent = sentiment;
+            cell3.textContent = `${(confidence * 100).toFixed(2)}%`;
+            cell4.textContent = model;
+        }
+        
+        async function processCSV() {
+            const fileInput = document.getElementById("csvFile");
+            const model = document.getElementById("model").value;
+            const resultDiv = document.getElementById("result");
+            const downloadLink = document.getElementById("downloadLink");
+            
+            if (!fileInput.files?.length) {
+                showError("Please select a CSV file");
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showError("Only CSV files supported");
+                return;
+            }
+            
+            resultDiv.textContent = "Processing...";
+            resultDiv.className = "result";
+            downloadLink.style.display = "none";
+            
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("model", model);
+                
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error(await response.text());
+                
+                const data = await response.json();
+                resultDiv.textContent = "File processed successfully";
+                resultDiv.className = "result positive";
+                downloadLink.href = data.download_url;
+                downloadLink.textContent = `Download ${data.filename}`;
+                downloadLink.style.display = "block";
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+        
+        function showError(message) {
+            const resultDiv = document.getElementById("result");
+            resultDiv.textContent = message;
+            resultDiv.className = "result negative";
+        }
+        
+        function downloadHistory() {
+            window.location.href = "/download_history";
+        }
+    </script>
+</body>
+</html>
