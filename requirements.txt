@@ -1,14 +1,13 @@
 flask==2.3.2
 flask-cors==3.0.10
-pandas==2.0.3
+pandas
 requests==2.31.0
 fastapi==0.95.2
 uvicorn==0.22.0
-tensorflow==2.12.0
+tensorflow
 transformers==4.30.2
-numpy==1.24.3
+numpy
 scikit-learn==1.2.2
-python-multipart==0.0.6
 jinja2==3.1.2
 python-multipart==0.0.6
 gdown==4.7.1  
