@@ -94,7 +94,7 @@ def download_file_from_drive(file_id: str, dest_path: str):
 def validate_model_files():
     """Validate all required model files exist"""
     required_files = {
-        "lstm": ["lstm_sentiment_model.keras", "tokenizer.pkl"],
+        "lstm": ["lstm_sentiment_model.h5", "tokenizer.pkl"],
         "bert": [
             f"{BERT_DIR}/config.json",
             f"{BERT_DIR}/model.safetensors",
@@ -131,7 +131,7 @@ def load_models():
         
         # Load LSTM model and tokenizer
         try:
-            lstm_model = tf.keras.models.load_model("lstm_sentiment_model.keras")
+            lstm_model = tf.keras.models.load_model("lstm_sentiment_model.h5")
             with open("tokenizer.pkl", "rb") as f:
                 tokenizer = pickle.load(f)
             logger.info("LSTM model and tokenizer loaded successfully")
