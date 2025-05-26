@@ -60,8 +60,8 @@ app.add_middleware(
 )
 
 # Initialize models
-lstm_model: Optional[tf.keras.Model] = None
-tokenizer: Optional[object] = None
+# lstm_model: Optional[tf.keras.Model] = None
+# tokenizer: Optional[object] = None
 bert_model: Optional[TFBertForSequenceClassification] = None
 bert_tokenizer: Optional[BertTokenizer] = None
 label_map: Optional[dict] = None
@@ -94,7 +94,7 @@ def download_file_from_drive(file_id: str, dest_path: str):
 def validate_model_files():
     """Validate all required model files exist"""
     required_files = {
-        "lstm": ["lstm_sentiment_model.h5", "tokenizer.pkl"],
+        #"lstm": ["lstm_sentiment_model.h5", "tokenizer.pkl"],
         "bert": [
             f"{BERT_DIR}/config.json",
             f"{BERT_DIR}/model.safetensors",
@@ -124,20 +124,20 @@ def validate_model_files():
 
 def load_models():
     """Load all ML models and components"""
-    global lstm_model, tokenizer, bert_model, bert_tokenizer, label_map
+    global  bert_model, bert_tokenizer, label_map
     
     try:
         validate_model_files()
         
-        # Load LSTM model and tokenizer
-        try:
-            lstm_model = tf.keras.models.load_model("lstm_sentiment_model.h5")
-            with open("tokenizer.pkl", "rb") as f:
-                tokenizer = pickle.load(f)
-            logger.info("LSTM model and tokenizer loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load LSTM model: {str(e)}")
-            raise
+        # # Load LSTM model and tokenizer
+        # try:
+        #     lstm_model = tf.keras.models.load_model("lstm_sentiment_model.h5")
+        #     with open("tokenizer.pkl", "rb") as f:
+        #         tokenizer = pickle.load(f)
+        #     logger.info("LSTM model and tokenizer loaded successfully")
+        # except Exception as e:
+        #     logger.error(f"Failed to load LSTM model: {str(e)}")
+        #     raise
 
         # Load BERT model and tokenizer
         try:
@@ -170,7 +170,7 @@ def home():
         "message": "Sentiment Analysis API",
         "status": "running",
         "models_loaded": {
-            "lstm": lstm_model is not None,
+            #"lstm": lstm_model is not None,
             "bert": bert_model is not None
         }
     }
@@ -178,10 +178,10 @@ def home():
 @app.get("/health")
 def health_check():
     return {
-        "status": "OK" if lstm_model and bert_model else "ERROR",
-        "lstm_loaded": lstm_model is not None,
+        # "status": "OK" if lstm_model and bert_model else "ERROR",
+        # "lstm_loaded": lstm_model is not None,
         "bert_loaded": bert_model is not None,
-        "ready": lstm_model is not None and bert_model is not None
+        "ready": bert_model is not None
     }
 
 @app.get("/model_status")
@@ -197,44 +197,44 @@ def get_model_status():
             logger.error(f"Error reading BERT config: {str(e)}")
     
     return {
-        "lstm_loaded": lstm_model is not None,
+        # "lstm_loaded": lstm_model is not None,
         "bert_loaded": bert_model is not None,
         "bert_config": bert_config,
         "label_map": label_map
     }
 
 @app.post("/predict")
-def classify_review_lstm(review: ReviewInput):
-    if lstm_model is None or tokenizer is None:
-        raise HTTPException(
-            status_code=503,
-            detail="LSTM model not loaded. Service unavailable."
-        )
-    
-    try:
-        seq = tokenizer.texts_to_sequences([review.text])
-        padded = pad_sequences(seq, maxlen=MAX_LEN, padding="post", truncating="post")
-        prediction = lstm_model.predict(padded, verbose=0)[0][0]
-        
-        if prediction >= 0.6:
-            sentiment = "Positive"
-        elif prediction <= 0.4:
-            sentiment = "Negative"
-        else:
-            sentiment = "Neutral"
-            
-        return {
-            "text": review.text[:100] + "..." if len(review.text) > 100 else review.text,
-            "sentiment": sentiment,
-            "confidence": float(prediction),
-            "model": "LSTM"
-        }
-    except Exception as e:
-        logger.error(f"LSTM prediction error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Prediction failed: {str(e)}"
-        )
+# def classify_review_lstm(review: ReviewInput):
+#     if lstm_model is None or tokenizer is None:
+#         raise HTTPException(
+#             status_code=503,
+#             detail="LSTM model not loaded. Service unavailable."
+#         )
+#
+#     try:
+#         seq = tokenizer.texts_to_sequences([review.text])
+#         padded = pad_sequences(seq, maxlen=MAX_LEN, padding="post", truncating="post")
+#         prediction = lstm_model.predict(padded, verbose=0)[0][0]
+#
+#         if prediction >= 0.6:
+#             sentiment = "Positive"
+#         elif prediction <= 0.4:
+#             sentiment = "Negative"
+#         else:
+#             sentiment = "Neutral"
+#
+#         return {
+#             "text": review.text[:100] + "..." if len(review.text) > 100 else review.text,
+#             "sentiment": sentiment,
+#             "confidence": float(prediction),
+#             "model": "LSTM"
+#         }
+#     except Exception as e:
+#         logger.error(f"LSTM prediction error: {str(e)}")
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Prediction failed: {str(e)}"
+#         )
 
 @app.post("/predict_bert")
 def classify_review_bert(review: ReviewInput):
