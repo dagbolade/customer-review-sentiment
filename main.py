@@ -37,12 +37,12 @@ MAX_LEN = 100
 
 BERT_DIR = "bert_model"
 DOWNLOADS = {
-    f"{BERT_DIR}/config.json": "10hkabfCS6yTsfueGr6UhxTnGh54L-7L4",
+    f"{BERT_DIR}/config.json": "10hkabfCS6yTsfueGr6UhxTnGh54L-7l4",
     f"{BERT_DIR}/model.safetensors": "1kvGD4Qc4wOdYi3-w-izUeTju0erURX8N",
-    f"{BERT_DIR}/special_tokens_map.json": "1mPKbDkRKL2mm1e29TyQfJ0ADAaYHxgL22",
-    f"{BERT_DIR}/tokenizer_config.json": "10tLVYpPtSaVm_svtEAQ9ADcL_K78j8HW",
-    f"{BERT_DIR}/training_args.bin": "1YsWx1OpCLU97U1pa83k6qj0IKUnk5Cky",
-    f"{BERT_DIR}/vocab.txt": "1LsqA0l3XooH16LVL6gmZ-cBdsP0fka-S",
+    f"{BERT_DIR}/special_tokens_map.json": "1mPKbDkRKL2mm1e29TyQfJ0ADaYHxgL22",
+    f"{BERT_DIR}/tokenizer_config.json": "10tlVYpPtSaVm_svtEAQ9ADcL_K78j8HW",
+    f"{BERT_DIR}/training_args.bin": "1YsWx1OpCLU97U1pa83k6QjOlKUnk5Cky",
+    f"{BERT_DIR}/vocab.txt": "1LsqA0l3XooH16LVl6qmZ-cBdsP0fka-S",
 }
 
 
